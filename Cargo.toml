@@ -1,5 +1,9 @@
 [package]
 name = "yank"
+description="A command line tool to copy and paste files in a desktop-like fashion."
+license="MIT"
+license-file="LICENSE"
+repository="https://github.com/stickynotememo/yank"
 version = "0.1.0"
 edition = "2024"
 

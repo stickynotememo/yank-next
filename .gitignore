@@ -1,7 +1,7 @@
 *
 
 !Cargo.toml
-!/src
-!PKGBUILD
+!src/
+!build-aux/PKGBUILD
 !README.md
 !LICENSE

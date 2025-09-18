@@ -1,13 +1,13 @@
 # yank
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A command line tool to copy and paste files in a desktop-like fashion.
 
 Files can be copied and saved to the clipboard, and later pasted. Unlike `cp`, it's not required to know the destination path beforehand.
 
 ## Installation
-Markdownlint can be installed using cargo:
+yank can be installed using cargo:
 ```cargo install yank```
-~~or on the AUR: ```yay -S yank```~~
 
 ## Usage
 ```bash

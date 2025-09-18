@@ -1,0 +1,18 @@
+# Maintainer: stickynotememo
+pkgname=yank
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A command line tool to copy and paste files in a desktop-like fashion."
+arch=('any')
+url="https://github.com/stickynotememo/yank"
+license=('MIT')
+source=("$pkgname-$pkgver.tar.gz::https://static.crates.io/crates/$pkgname/$pkgname-$pkgver.crate")
+
+build() {
+	cd v${pkgver}
+	cargo build --release
+}
+
+package() {
+	cargo install --root ${pkgdir} ${srcdir}/v${pkgver}
+}
