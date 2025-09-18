@@ -1,4 +1,4 @@
-# yank
+# yank-next
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A command line tool to copy and paste files in a desktop-like fashion.
@@ -6,8 +6,8 @@ A command line tool to copy and paste files in a desktop-like fashion.
 Files can be copied and saved to the clipboard, and later pasted. Unlike `cp`, it's not required to know the destination path beforehand.
 
 ## Installation
-yank can be installed using cargo:
-```cargo install yank```
+yank-next can be installed using cargo:
+```cargo install yank-next```
 
 ## Usage
 ```bash
@@ -18,4 +18,4 @@ yank # to paste, optionally use -p flag to specify paste filename
 ```
 
 ## Notes
-[crates.io/yank](https://crates.io/crates/yank) exists and has a similar function, but is no longer maintained. I was not aware of this crate before developing this tool.
+[crates.io/yank](https://crates.io/crates/yank) exists and has a similar function, but is no longer maintained. I was not aware of this crate before developing or naming this tool.
