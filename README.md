@@ -16,6 +16,5 @@ yank -x [FILE] # cut the file
 cd destination_folder
 yank # to paste, optionally use -p flag to specify paste filename
 ```
-
 ## Notes
-[crates.io/yank](https://crates.io/crates/yank) exists and has a similar function, but is no longer maintained. I was not aware of this crate before developing or naming this tool.
+[crates.io/yank](https://crates.io/crates/yank) exists and has a similar function, but is no longer maintained. Neither the name or the concept are related in origin.

@@ -1,9 +1,9 @@
 [package]
 name = "yank-next"
-description="A command line tool to copy and paste files in a desktop-like fashion."
-license="MIT"
-license-file="LICENSE"
-repository="https://github.com/stickynotememo/yank"
+description = "A command line tool to copy and paste files in a desktop-like fashion."
+license = "MIT"
+license-file = "LICENSE"
+repository = "https://github.com/stickynotememo/yank"
 version = "0.1.1"
 edition = "2024"
 
