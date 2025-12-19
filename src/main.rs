@@ -4,9 +4,10 @@
 // TODO: Add tests
 
 use std::path::{ PathBuf };
-use std::path;
+use std::{path, process};
 use std::fs;
-use clap::Parser;
+use clap::error::{Error, ErrorKind};
+use clap::{Command, CommandFactory, Parser};
 use preferences::{ AppInfo, Preferences };
 use serde::{ Serialize, Deserialize };
 
@@ -43,9 +44,16 @@ const APP_INFO: AppInfo = AppInfo {
     author: "stickynotememo"
 };
 
-fn copy(args: &Args) {
-    let file = PathBuf::from(&args.file.as_ref().unwrap());
-    let file_metadata = fs::metadata(&file).expect("Could not find file or folder");
+fn copy(args: &Args, cmd: &mut Command) -> Result<(), clap::error::Error> {
+    let Some(file_argument) = &args.file.as_ref() else {
+        let err = cmd.error(ErrorKind::TooFewValues, "yank: No file or folder in clipboard and none specified.");
+        return Err(err);
+    };
+    let file = PathBuf::from(file_argument);
+    let Ok(file_metadata) = fs::metadata(&file) else {
+        let err = cmd.error(ErrorKind::Io, "yank: Couldn't find file at the path specified.");
+        return Err(err);
+    };
 
     let moveop = match args.cut {
         true => MoveOp::Move,
@@ -57,25 +65,30 @@ fn copy(args: &Args) {
         // done by paste()
         let user_data = UserData {
             moveop: moveop,
-            object_path: path::absolute(file).expect("Could not find file or folder")
+            object_path: path::absolute(file).expect("unreachable: file seems to have been deleted.")
         };
-        user_data.save(&APP_INFO, PREFS_KEY).expect("Could not save clipboard to file.");
+        let Ok(_)  = user_data.save(&APP_INFO, PREFS_KEY) else {
+            let err = cmd.error(ErrorKind::Io, "yank: Couldn't access clipboard.\nyank: Permissions issue?");
+            return Err(err);
+        };
 
     } else {
         todo!();
         // Use when directory copy is implemented
         // panic!("yank: Cannot copy \'{}\': Is a directory\nyank: Use -r to copy directories recursively", filename);
-    }
+    };
+    Ok(())
 
 }
 
-fn paste(args: &Args) {
+fn paste(args: &Args, cmd: &mut Command) -> Result<(), clap::error::Error>{
     // No file specified, yank should paste the file in the clipboard
     // Optionally, the --paste flag can be used to specify where to save the file
 
     let user_data = UserData::load(&APP_INFO, PREFS_KEY).unwrap();
     let moveop = user_data.moveop;
     let clipboard = user_data.object_path;
+    dbg!(&moveop, &clipboard);
 
     let paste_file_name: PathBuf = match &args.paste_file {
         // If a paste file has been specified using the flag, it should be used instead
@@ -87,22 +100,38 @@ fn paste(args: &Args) {
         // Clipboard is set by yank, not by the user. Using unwrap is okay.
     };
 
-    let paste_file_path = path::absolute(paste_file_name).expect("yank: paste path could not be parsed");
-
-    match moveop {
-        MoveOp::Move => { fs::rename(clipboard, paste_file_path).expect("yank: an error occurred while copying files"); },
-        MoveOp::Copy => { fs::copy(clipboard, paste_file_path).expect("yank: an error occurred while copying files"); }
+    let Ok(paste_file_path) = path::absolute(paste_file_name) else {
+        return Err(cmd.error(ErrorKind::InvalidValue, "yank: couldn't parse file path"));
     };
 
+    match moveop {
+        MoveOp::Move => {
+            match fs::rename(clipboard, paste_file_path) {
+                Ok(_) => Ok(()),
+                Err(_) => Err(cmd.error(ErrorKind::Io, "yank: an error occurred while moving files."))
+            }
+        },
+        MoveOp::Copy => {
+            match fs::copy(clipboard, paste_file_path) {
+                Ok(_) => Ok(()),
+                Err(_) => Err(cmd.error(ErrorKind::Io, "yank: an error occurred while copying files."))
+            }
+        }
+    }
 }
 
 fn main() {
     let args = Args::parse();
-    match &args.file {
+    let mut cmd = Args::command();
+    let result = match &args.file {
         Some(file) => {
-            copy(&args);
+            copy(&args, &mut cmd)
         },
-        None => paste(&args)
+        None => paste(&args, &mut cmd),
     };
-
+    
+    match result {
+        Ok(_) => {},
+        Err(e) => e.exit()
+    };
 }
