@@ -11,7 +11,7 @@ use clap::{Command, CommandFactory, Parser};
 use preferences::{ AppInfo, Preferences };
 use serde::{ Serialize, Deserialize };
 
-#[derive(Parser)]
+#[derive(Parser)] 
 #[command(author = "stickynotememo", version = "0.1.0", about = "A command line tool to copy and paste files in a desktop-like fashion.", long_about = None)]
 struct Args {
     file: Option<String>,
@@ -38,7 +38,7 @@ struct UserData {
     object_path: PathBuf
 }
 
-const PREFS_KEY: &str = "/etc/yank/clipboard";
+const PREFS_KEY: &str = "/etc/yank/clipboardd";
 const APP_INFO: AppInfo = AppInfo {
     name: "yank",
     author: "stickynotememo"
@@ -46,12 +46,12 @@ const APP_INFO: AppInfo = AppInfo {
 
 fn copy(args: &Args, cmd: &mut Command) -> Result<(), clap::error::Error> {
     let Some(file_argument) = &args.file.as_ref() else {
-        let err = cmd.error(ErrorKind::TooFewValues, "yank: No file or folder in clipboard and none specified.");
+        let err = cmd.error(ErrorKind::TooFewValues, "no file or folder in clipboard and none specified.");
         return Err(err);
     };
-    let file = PathBuf::from(file_argument);
-    let Ok(file_metadata) = fs::metadata(&file) else {
-        let err = cmd.error(ErrorKind::Io, "yank: Couldn't find file at the path specified.");
+    let copy_file_path = PathBuf::from(file_argument);
+    let Ok(file_metadata) = fs::metadata(&copy_file_path) else {
+        let err = cmd.error(ErrorKind::Io, "couldn't find file at the path specified.");
         return Err(err);
     };
 
@@ -65,10 +65,10 @@ fn copy(args: &Args, cmd: &mut Command) -> Result<(), clap::error::Error> {
         // done by paste()
         let user_data = UserData {
             moveop: moveop,
-            object_path: path::absolute(file).expect("unreachable: file seems to have been deleted.")
+            object_path: path::absolute(copy_file_path).expect("unexpected error: file seems to have been deleted, even though it was detected to exist. Please file a bug report.")
         };
         let Ok(_)  = user_data.save(&APP_INFO, PREFS_KEY) else {
-            let err = cmd.error(ErrorKind::Io, "yank: Couldn't access clipboard.\nyank: Permissions issue?");
+            let err = cmd.error(ErrorKind::Io, "couldn't access clipboard. Permissions issue?");
             return Err(err);
         };
 
@@ -85,10 +85,11 @@ fn paste(args: &Args, cmd: &mut Command) -> Result<(), clap::error::Error>{
     // No file specified, yank should paste the file in the clipboard
     // Optionally, the --paste flag can be used to specify where to save the file
 
-    let user_data = UserData::load(&APP_INFO, PREFS_KEY).unwrap();
+    let Ok(user_data) = UserData::load(&APP_INFO, PREFS_KEY) else {
+        return Err(cmd.error(ErrorKind::Io, "no file or folder in clipboard and none specified."));
+    };
     let moveop = user_data.moveop;
     let clipboard = user_data.object_path;
-    dbg!(&moveop, &clipboard);
 
     let paste_file_name: PathBuf = match &args.paste_file {
         // If a paste file has been specified using the flag, it should be used instead
@@ -96,25 +97,29 @@ fn paste(args: &Args, cmd: &mut Command) -> Result<(), clap::error::Error>{
         // If the clipboard value is being used, the file/directory should be pasted in the
         // current directory while maintaining its filename
         Some(paste_file) => PathBuf::from(paste_file),
-        None => PathBuf::from(path::absolute(clipboard.file_name().unwrap()).unwrap()) 
-        // Clipboard is set by yank, not by the user. Using unwrap is okay.
+        None => PathBuf::from(path::absolute(clipboard.file_name().expect("unexpected error: couldn't find clipboard path. Please file a bug report.")).unwrap()) // TODO: Do something about unwrap.
     };
 
     let Ok(paste_file_path) = path::absolute(paste_file_name) else {
-        return Err(cmd.error(ErrorKind::InvalidValue, "yank: couldn't parse file path"));
+        return Err(cmd.error(ErrorKind::InvalidValue, "couldn't parse file path"));
+    };
+
+    let Ok(file_metadata) = fs::metadata(&paste_file_path) else {
+        let err = cmd.error(ErrorKind::Io, "couldn't find file at the path specified.");
+        return Err(err);
     };
 
     match moveop {
         MoveOp::Move => {
             match fs::rename(clipboard, paste_file_path) {
                 Ok(_) => Ok(()),
-                Err(_) => Err(cmd.error(ErrorKind::Io, "yank: an error occurred while moving files."))
+                Err(_) => Err(cmd.error(ErrorKind::Io, "an error occurred while moving files."))
             }
         },
         MoveOp::Copy => {
             match fs::copy(clipboard, paste_file_path) {
                 Ok(_) => Ok(()),
-                Err(_) => Err(cmd.error(ErrorKind::Io, "yank: an error occurred while copying files."))
+                Err(_) => Err(cmd.error(ErrorKind::Io, "an error occurred while copying files."))
             }
         }
     }
@@ -132,6 +137,6 @@ fn main() {
     
     match result {
         Ok(_) => {},
-        Err(e) => e.exit()
+        Err(e) => { e.exit(); }
     };
 }
