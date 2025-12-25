@@ -1,14 +1,13 @@
 # Maintainer: stickynotememo
-# https://wiki.archlinux.org/title/Rust_package_guidelines
+# samk26633@gmail.com
 pkgname=yank-next
 executablename=yank
-pkgver=0.1.0
+pkgver=1.0.0
 pkgrel=1
 pkgdesc="A command line tool to copy and paste files in a desktop-like fashion."
 arch=('any')
 url="https://github.com/stickynotememo/${pkgname}"
 license=('MIT')
-sha256sums=('68e576de42c9ca2f6c8e35a3bbcca7f0f77f8cce99578a8dc78fe85b2cb46237')
 
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
 makedepends=(cargo)
